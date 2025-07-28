@@ -186,7 +186,11 @@ def listar_arquivos():
     if user_id:
         params.append(f"user_id={user_id}")
     if empresa_id:
-        params.append(f"empresa_id={empresa_id}")
+        # Ajuste: se empresa_id for SEM_VINCULO, envie so_sem_empresa=true
+        if empresa_id == "SEM_VINCULO":
+            params.append("so_sem_empresa=true")
+        else:
+            params.append(f"empresa_id={empresa_id}")
     params.append("only_active=true")
     query = "&".join(params)
     resp = requests.get(f"{SUPABASE_API}?{query}", headers=get_headers())
