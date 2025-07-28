@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary: #3c5eea;
+      --primary-dark: #2847b7;
+      --gray-bg: #f5f6fa;
+      --gray: #e7e9f1;
+      --white: #fff;
+      --black: #16192a;
+      --border: #d8dbe8;
+      --radius: 12px;
+      --shadow: 0 2px 16px #1b234712;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--gray-bg);
+      color: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 16px;
+    }
+
+    .login-card {
+      background: var(--white);
+      padding: 42px 36px 32px 36px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--gray);
+      max-width: 420px;
+      width: 100%;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 28px;
+      color: var(--primary-dark);
+      font-size: 2em;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    input {
+      width: 92.5%;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border: 1.4px solid var(--gray);
+      border-radius: var(--radius);
+      background: #f8f9fb;
+      font-size: 1em;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      outline: none;
+      background: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: 1em;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(60, 94, 234, 0.15);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 3px 10px rgba(60, 94, 234, 0.22);
+    }
+
+    .footer-text {
+      margin-top: 26px;
+      text-align: center;
+      font-size: 0.94em;
+      color: #7c849c;
+    }
+
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 30px 20px;
+      }
+      h2 {
+        font-size: 1.6em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <form class="login-card" method="POST" action="/login" autocomplete="on">
+    <h2>Bem-vindo</h2>
+    <input type="email" name="email" placeholder="Seu e-mail" required />
+    <input type="password" name="senha" placeholder="Sua senha" required />
+    <button type="submit">Entrar</button>
+    <div class="footer-text">Plataforma Cloud AIZ</div>
+  </form>
+</body>
+</html>

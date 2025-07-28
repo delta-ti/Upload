@@ -1,4 +1,5 @@
-from flask import Flask, request, send_from_directory, jsonify, render_template
+from flask import Flask, request, send_from_directory, jsonify, render_template, session, redirect, url_for
+from functools import wraps
 import os
 import urllib.parse
 import requests
@@ -6,41 +7,96 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = r'C:\Users\GRUPO_AIZ\Desktop\imagens'
+app.secret_key = "chave-secreta-para-session"  # importante para cookies JWT
 
 SUPABASE_API = "https://pbhulouvwqdzkattzckp.supabase.co/functions/v1/dynamic-endpoint"
 SUPABASE_USUARIOS = "https://pbhulouvwqdzkattzckp.supabase.co/functions/v1/dynamic-action"
 SUPABASE_EMPRESAS_USER = "https://pbhulouvwqdzkattzckp.supabase.co/functions/v1/quick-service"
-SUPABASE_API_TOKEN = "SEU_TOKEN_DO_SERVICE_ROLE"  # Substitua pelo seu token
 
-API_HEADERS = {
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6IlhnT29Wcyt6MmJ0cjBnL3IiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3BiaHVsb3V2d3FkemthdHR6Y2twLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJiZGVjY2NkMC02MjMwLTQyYjQtOTEyNi0wOTU1NjZkZjc3NTgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzNDY2NDU3LCJpYXQiOjE3NTM0NjI4NTcsImVtYWlsIjoiamVhbi5zaWx2YUBncnVwb2Fpei5jb20uYnIiLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJub21lIjoiSmVhbiIsIm9yaWdlbV9jYWRhc3Ryb19pZCI6IjRiZTY1ZDUyLTNkYjgtNDYzNS04MWQxLWUxMDg1ODgzYzQ4ZSIsInNvYnJlbm9tZSI6ImplYW4iLCJ0ZWxlZm9uZSI6IjE0MjE0MjE0MjE0MjE0In0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTM0NjI4NTd9XSwic2Vzc2lvbl9pZCI6ImQ1ZjMwYTQzLTZiNjAtNDUzZS05YzMyLWRjMDdlZDk3MjM2NCIsImlzX2Fub255bW91cyI6ZmFsc2V9.2gEitvoDEKQ_gVEZnr4gWhsGErn48uLu6IBswlvl6ZM",  # Troque aqui pelo JWT correto
-    "Content-Type": "application/json"
-}
+# === Decorator para proteção ===
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("access_token"):
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def get_headers():
+    token = session.get("access_token")
+    return {
+        "Authorization": f"Bearer {token}" if token else "",
+        "Content-Type": "application/json"
+    }
 
 @app.route("/")
+@login_required
 def index():
-    return render_template("index.html")
+    nome_usuario = session.get("user_nome", "")
+    return render_template("index.html", nome_usuario=nome_usuario)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        senha = request.form.get("senha")
+
+        payload = {"email": email, "senha": senha}
+        headers = {
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaHVsb3V2d3FkemthdHR6Y2twIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4Mzk2MTcsImV4cCI6MjA2NTQxNTYxN30.2RixRM5TD-RUUdve4EbJME0-lkjSyIe-GL0steal-yA",
+            "Content-Type": "application/json"
+        }
+
+        try:
+            resp = requests.post(
+                "https://pbhulouvwqdzkattzckp.supabase.co/functions/v1/smooth-endpoint",
+                json=payload,
+                headers=headers
+            )
+            resp.raise_for_status()
+            dados = resp.json()
+
+            session["access_token"] = dados["access_token"]
+
+            # Recuperar nome e sobrenome formatados
+            user_metadata = dados.get("user", {}).get("user_metadata", {})
+            nome = user_metadata.get("nome", "").strip().title()
+            sobrenome = user_metadata.get("sobrenome", "").strip().title()
+            nome_completo = f"{nome} {sobrenome}".strip() if nome or sobrenome else email
+
+            session["user_nome"] = nome_completo
+
+            return redirect(url_for("index"))
+        except Exception as e:
+            return f"Erro no login: {e}", 401
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 @app.route("/usuarios")
+@login_required
 def listar_usuarios():
     try:
-        resp = requests.get(SUPABASE_USUARIOS, headers=API_HEADERS)
+        resp = requests.get(SUPABASE_USUARIOS, headers=get_headers())
         resp.raise_for_status()
-        usuarios = resp.json()
-        return jsonify(usuarios)
+        return jsonify(resp.json())
     except Exception as e:
         print("Erro ao listar usuários:", e)
         return jsonify([]), 500
 
-# NOVO: Empresas do usuário filtradas por aprovado
 @app.route("/empresas_usuario/<user_id>")
+@login_required
 def empresas_usuario(user_id):
     try:
         url = f"{SUPABASE_EMPRESAS_USER}?usuario_id={user_id}"
-        resp = requests.get(url, headers=API_HEADERS)
+        resp = requests.get(url, headers=get_headers())
         resp.raise_for_status()
         empresas = resp.json()
-        # Apenas empresas aprovadas, vinculadas ao usuário, com dados de empresa válidos
         empresas_aprovadas = [
             emp for emp in empresas
             if emp.get("status_aprovacao") in ("aprovado", "aprovada")
@@ -56,8 +112,8 @@ def empresas_usuario(user_id):
         print("Erro ao buscar empresas do usuário:", e)
         return jsonify([]), 500
 
-
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload():
     user_id = request.form.get('user_id')
     empresa_id = request.form.get('empresa_id')
@@ -75,7 +131,6 @@ def upload():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     caminho = os.path.join(app.config['UPLOAD_FOLDER'], arquivo.filename)
 
-    # Evita sobrescrever arquivos
     if os.path.exists(caminho):
         base, ext = os.path.splitext(arquivo.filename)
         i = 1
@@ -93,7 +148,7 @@ def upload():
         return f"Erro ao salvar arquivo: {e}", 500
 
     nome_arquivo_url = urllib.parse.quote(filename_final)
-    HOST = "192.168.0.99"
+    HOST = "192.168.0.110"
     PORT = 5001
     url_completa = f'http://{HOST}:{PORT}/imagens/{nome_arquivo_url}'
 
@@ -111,11 +166,7 @@ def upload():
     }
     metadados = {k: v for k, v in metadados.items() if v is not None}
 
-    resp = requests.post(
-        SUPABASE_API,
-        headers=API_HEADERS,
-        json=metadados
-    )
+    resp = requests.post(SUPABASE_API, headers=get_headers(), json=metadados)
     print("Resposta POST arquivos:", resp.status_code, resp.text)
     if resp.status_code in (200, 201):
         return jsonify({"url": url_completa, "msg": "Arquivo salvo e metadados enviados!"})
@@ -127,6 +178,7 @@ def imagens(nome):
     return send_from_directory(app.config['UPLOAD_FOLDER'], nome)
 
 @app.route('/arquivos')
+@login_required
 def listar_arquivos():
     user_id = request.args.get('user_id')
     empresa_id = request.args.get('empresa_id')
@@ -137,20 +189,18 @@ def listar_arquivos():
         params.append(f"empresa_id={empresa_id}")
     params.append("only_active=true")
     query = "&".join(params)
-    resp = requests.get(
-        f"{SUPABASE_API}?{query}",
-        headers=API_HEADERS
-    )
+    resp = requests.get(f"{SUPABASE_API}?{query}", headers=get_headers())
     return resp.json(), resp.status_code
 
 @app.route('/arquivo/<arquivo_id>', methods=['PATCH'])
+@login_required
 def deletar_arquivo(arquivo_id):
     payload = {
         "ativo": False,
         "status": "inativo"
     }
-    url = f"{SUPABASE_API}?id={arquivo_id}"  # PATCH padrão para Edge Function (sem eq.)
-    resp = requests.patch(url, headers=API_HEADERS, json=payload)
+    url = f"{SUPABASE_API}?id={arquivo_id}"
+    resp = requests.patch(url, headers=get_headers(), json=payload)
     print("PATCH arquivos:", resp.status_code, resp.text)
     try:
         resp_json = resp.json()

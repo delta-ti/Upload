@@ -66,6 +66,19 @@
 .download-btn:hover {
   background: #2f5fcc;
 }
+.logout-link {
+  color: #c52222;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.logout-link:hover {
+  background: #ffecec;
+  border-color: #c52222;
+}
 
   </style>
 </head>
@@ -79,10 +92,11 @@
   <div class="topbar">
     <div class="logo-area">
       <img src="{{ url_for('static', filename='images.jpg') }}" alt="Logo" class="logo-img">
-      <span class="logo-text">CloudFiles | Jean</span>
+      <span class="logo-text">CloudFiles | {{ nome_usuario }}</span>
     </div>
-    <div class="user-menu">
-      <span class="user-avatar">J</span>
+    <div class="user-menu" style="display: flex; align-items: center; gap: 12px;">
+      <a href="/logout" class="logout-link">Sair</a>
+     <span class="user-avatar">{{ nome_usuario[0]|upper }}</span>
     </div>
   </div>
   <div class="main-wrapper">
