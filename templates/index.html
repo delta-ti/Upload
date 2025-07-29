@@ -1,363 +1,116 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard Uploads - Plataforma Cloud</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
-.lista-item {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 18px 0;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fcfdff;
-  border-radius: 16px;
-  margin-bottom: 8px;
-  position: relative;
-  min-height: 84px;
-}
-
-.lista-icon {
-  margin-left: 18px;
-}
-
-.botoes-arquivo {
-  display: flex;
-  gap: 10px;
-  position: absolute;
-  right: 32px;
-  top: 28px;
-  z-index: 2;
-}
-
-.danger {
-  background: #c52222 !important;
-  color: #fff !important;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  padding: 8px 22px;
-  font-size: 1em;
-  transition: background 0.18s;
-}
-
-.danger:hover {
-  background: #a31c1c !important;
-}
-
-.download-btn {
-  background: #4179fa;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  padding: 8px 22px;
-  text-decoration: none;
-  font-size: 1em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.17s;
-}
-.download-btn:hover {
-  background: #2f5fcc;
-}
-.logout-link {
-  color: #c52222;
-  font-weight: 600;
-  text-decoration: none;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-.logout-link:hover {
-  background: #ffecec;
-  border-color: #c52222;
-}
-
-  </style>
-</head>
-<body>
-  <!-- Tela de carregamento -->
-  <div id="loadingOverlay" style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.7);align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:32px 48px;border-radius:16px;box-shadow:0 2px 16px #0002;font-size:1.3em;font-weight:600;display:flex;align-items:center;gap:18px;">
-      <span style="font-size:2em;">⏳</span> Carregando...
+  <head>
+    <meta charset="UTF-8">
+    <title>Dashboard Uploads - Plataforma Cloud</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet" href="static/style/style.css">
+    <link rel="stylesheet" href="static/style/dashboard.css">
+  </head>
+  <body>
+    <!-- Tela de carregamento -->
+    <div id="loadingOverlay"
+      style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.7);align-items:center;justify-content:center;">
+      <div
+        style="background:#fff;padding:32px 48px;border-radius:16px;box-shadow:0 2px 16px #0002;font-size:1.3em;font-weight:600;display:flex;align-items:center;gap:18px;">
+        <span style="font-size:2em;">⏳</span> Carregando...
+      </div>
+    </div>
+    <div class="topbar">
+      <div class="logo-area">
+        <img src="static/img/images.jpg" alt="Logo" class="logo-img">
+        <span class="logo-text">CloudFiles | {{ nome_usuario }}</span>
+      </div>
+      <div class="user-menu"
+        style="display: flex; align-items: center; gap: 12px;">
+        <a href="/logout" class="logout-link">Sair</a>
+        <span class="user-avatar">{{ nome_usuario[0]|upper }}</span>
+      </div>
+    </div>
+    <div class="main-wrapper">
+      <aside class="sidebar">
+        <ul>
+          <li><a href="/"><span>📁</span> Uploads</a></li>
+        </ul>
+      </aside>
+      <main class="main-content">
+        <header class="content-header">
+          <h1>Upload de Arquivos</h1>
+        </header>
+        <section class="upload-form-card">
+          <form id="uploadForm" autocomplete="off">
+            <div class="form-row">
+              <label>Usuário</label>
+              <select id="usuarioSelect" name="user_id" required
+                style="min-width:180px;"></select>
+            </div>
+            <!-- EMPRESA, só aparece se houver vínculo aprovado -->
+            <div class="form-row" id="empresaRow" style="display:none;">
+              <label>Empresa</label>
+              <select id="empresaSelect" name="empresa_id" disabled>
+                <option value>Selecione...</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Arquivo</label>
+              <input type="file" name="arquivo" required
+                accept="image/*,application/pdf">
+            </div>
+            <div class="form-row">
+              <label for="data_expiracao" style="font-weight: 600;">📅 Data de
+                Expiração</label>
+              <input type="date"
+                id="data_expiracao"
+                name="data_expiracao"
+                style="padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95em; width: 100%; max-width: 220px; background: #fff; color: #111827; transition: border-color 0.2s;"
+                placeholder="Selecione a data">
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn primary">Enviar</button>
+              <button type="button" class="btn"
+                onclick="listarArquivosUsuario()">Ver Arquivos</button>
+            </div>
+          </form>
+          <div id="uploadResult"></div>
+        </section>
+        <section class="files-list-section">
+          <h2>Arquivos do Usuário</h2>
+          <div id="arquivosLista" class="files-list"></div>
+        </section>
+      </main>
+    </div>
+    <script src="/static/script/deshboard.js"></script>
+   
+<div id="modalSucesso" class="modal-bg">
+  <div class="modal-box">
+    <button class="close-btn" onclick="fecharModal()">×</button>
+    <h3 style="color: var(--primary-dark); margin-top: 0;">✅ Arquivo excluído</h3>
+    <p style="color: #4b5563;">O arquivo foi removido com sucesso.</p>
+  </div>
+</div>
+<!-- Modal de Confirmação -->
+<div id="modalConfirm" class="modal-bg">
+  <div class="modal-box">
+    <h3 style="color: var(--primary-dark); margin-top: 0;">Confirmação de exclusão</h3>
+    <p style="color: #4b5563;">Tem certeza que deseja excluir este arquivo?<br>Esta ação não poderá ser desfeita.</p>
+    <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn" onclick="cancelarExclusao()">Cancelar</button>
+      <button class="btn primary" onclick="confirmarExclusao()">Excluir</button>
     </div>
   </div>
-  <div class="topbar">
-    <div class="logo-area">
-      <img src="{{ url_for('static', filename='images.jpg') }}" alt="Logo" class="logo-img">
-      <span class="logo-text">CloudFiles | {{ nome_usuario }}</span>
-    </div>
-    <div class="user-menu" style="display: flex; align-items: center; gap: 12px;">
-      <a href="/logout" class="logout-link">Sair</a>
-     <span class="user-avatar">{{ nome_usuario[0]|upper }}</span>
+</div>
+<!-- Modal de Sucesso Upload -->
+<div id="modalUpload" class="modal-bg">
+  <div class="modal-box">
+    <h3 style="color: var(--primary-dark); margin-top: 0;">✅ Upload realizado</h3>
+    <p style="color: #4b5563;">O arquivo foi enviado com sucesso.</p>
+    <div style="margin-top: 12px;">
+      <a id="modalUploadLink" href="#" target="_blank" class="btn primary">Abrir arquivo</a>
     </div>
   </div>
-  <div class="main-wrapper">
-    <aside class="sidebar">
-      <ul>
-        <li><a href="/"><span>📁</span> Uploads</a></li>
-      </ul>
-    </aside>
-    <main class="main-content">
-      <header class="content-header">
-        <h1>Upload de Arquivos</h1>
-      </header>
-      <section class="upload-form-card">
-        <form id="uploadForm" autocomplete="off">
-          <div class="form-row">
-            <label>Usuário</label>
-            <select id="usuarioSelect" name="user_id" required style="min-width:180px;"></select>
-          </div>
-          <!-- EMPRESA, só aparece se houver vínculo aprovado -->
-          <div class="form-row" id="empresaRow" style="display:none;">
-            <label>Empresa</label>
-            <select id="empresaSelect" name="empresa_id" disabled>
-              <option value="">Selecione...</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>Arquivo</label>
-            <input type="file" name="arquivo" required accept="image/*,application/pdf">
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn primary">Enviar</button>
-            <button type="button" class="btn" onclick="listarArquivosUsuario()">Ver Arquivos</button>
-          </div>
-        </form>
-        <div id="uploadResult"></div>
-      </section>
-      <section class="files-list-section">
-        <h2>Arquivos do Usuário</h2>
-        <div id="arquivosLista" class="files-list"></div>
-      </section>
-    </main>
-  </div>
-
-<script>
-  // Funções de loading
-  function showLoading() {
-    document.getElementById('loadingOverlay').style.display = 'flex';
-  }
-  function hideLoading() {
-    document.getElementById('loadingOverlay').style.display = 'none';
-  }
-
-  // Preenche lista de usuários e seleciona o logado
-  async function preencherUsuarios() {
-    showLoading();
-    try {
-      const resp = await fetch('/usuarios');
-      const usuarios = await resp.json();
-      const select = document.getElementById('usuarioSelect');
-      select.innerHTML = '';
-      let userLogado = Array.isArray(usuarios) ? usuarios[0] : (usuarios.users ? usuarios.users[0] : null);
-      (Array.isArray(usuarios) ? usuarios : usuarios.users).forEach(user => {
-        const opt = document.createElement('option');
-        opt.value = user.auth_user_id;
-        opt.textContent = user.nome || user.email || user.id;
-        select.appendChild(opt);
-      });
-      // Seleciona o logado (primeiro da lista)
-      if (userLogado) select.value = userLogado.auth_user_id;
-    } catch {
-      const select = document.getElementById('usuarioSelect');
-      select.innerHTML = '<option value="">Erro ao buscar usuários</option>';
-    }
-    hideLoading();
-    // Atualiza empresas e arquivos do usuário selecionado
-    await atualizarEmpresasUsuario();
-    listarArquivosUsuario();
-  }
-
-  // Atualiza empresas ao trocar usuário
-  async function atualizarEmpresasUsuario() {
-    const user_id = document.getElementById('usuarioSelect').value;
-    const empresaRow = document.getElementById('empresaRow');
-    const empresaSelect = document.getElementById('empresaSelect');
-    empresaSelect.innerHTML = '<option value="">Selecione...</option>';
-    empresaSelect.disabled = true;
-    empresaRow.style.display = "none";
-    if (!user_id) return;
-    showLoading();
-    try {
-      const resp = await fetch(`/empresas_usuario/${user_id}`);
-      const empresas = await resp.json();
-      const aprovadas = (empresas || []).filter(emp =>
-        emp.status_aprovacao && emp.status_aprovacao.toLowerCase() === 'aprovado'
-        && emp.usuario_id === user_id
-        && emp.empresa
-      );
-      if (aprovadas.length > 0) {
-        aprovadas.forEach(emp => {
-          let nome = (emp.empresa.nome_fantasia || emp.empresa.razao_social || emp.empresa_id);
-          empresaSelect.innerHTML += `<option value="${emp.empresa_id}">${nome}</option>`;
-        });
-        empresaRow.style.display = "block";
-        empresaSelect.disabled = false;
-      } else {
-        empresaRow.style.display = "none";
-      }
-    } catch (e) {
-      empresaRow.style.display = "none";
-    }
-    hideLoading();
-  }
-
-  // Troca usuário: atualiza empresas e arquivos
-  document.getElementById('usuarioSelect').addEventListener('change', async function () {
-    await atualizarEmpresasUsuario();
-    listarArquivosUsuario();
-  });
-
-  // Troca empresa: atualiza arquivos
-  document.getElementById('empresaSelect').addEventListener('change', function() {
-    showLoading();
-    listarArquivosUsuario();
-    hideLoading();
-  });
-
-  // Upload assíncrono
-  document.getElementById('uploadForm').onsubmit = async function (e) {
-    e.preventDefault();
-    showLoading();
-    const form = e.target;
-    const data = new FormData(form);
-    // Remove empresa_id se campo empresa não estiver visível
-    if (document.getElementById('empresaRow').style.display === 'none') {
-      data.delete('empresa_id');
-    }
-    document.getElementById('uploadResult').textContent = 'Enviando...';
-    // Salva o usuário selecionado antes do reset
-    const usuarioSelect = document.getElementById('usuarioSelect');
-    const usuarioSelecionado = usuarioSelect.value;
-    try {
-      const resp = await fetch('/upload', { method: 'POST', body: data });
-      if (resp.ok) {
-        const res = await resp.json();
-        document.getElementById('uploadResult').innerHTML =
-          `<b>Upload feito!</b><br><a href="${res.url}" target="_blank">Abrir arquivo</a>`;
-        form.reset();
-        // Restaura o usuário selecionado após o reset
-        usuarioSelect.value = usuarioSelecionado;
-        document.getElementById('empresaRow').style.display = 'none';
-        listarArquivosUsuario();
-      } else {
-        const erro = await resp.text();
-        document.getElementById('uploadResult').textContent = erro;
-      }
-    } catch {
-      document.getElementById('uploadResult').textContent = "Falha ao enviar.";
-    }
-    hideLoading();
-  };
-
-  // Listar arquivos do usuário selecionado, e só da empresa (se selecionada)
-  async function listarArquivosUsuario() {
-    showLoading();
-    const select = document.getElementById('usuarioSelect');
-    const user_id = select.value;
-    const empresaSelect = document.getElementById('empresaSelect');
-    const empresaRow = document.getElementById('empresaRow');
-    const empresa_id = (empresaRow.style.display !== 'none' && empresaSelect.value) ? empresaSelect.value : null;
-    const div = document.getElementById('arquivosLista');
-    if (!user_id) {
-      div.innerHTML = "<em>Selecione um usuário.</em>";
-      hideLoading();
-      return;
-    }
-
-    // Se empresaRow visível e não selecionou empresa, mostra só arquivos sem vínculo
-    if (empresaRow.style.display !== 'none' && !empresa_id) {
-      // Busca apenas arquivos sem empresa vinculada
-      let url = `/arquivos?user_id=${encodeURIComponent(user_id)}&empresa_id=SEM_VINCULO`;
-      await fetchAndRenderArquivos(url, div);
-      hideLoading();
-      return;
-    }
-
-    let url = `/arquivos?user_id=${encodeURIComponent(user_id)}`;
-    if (empresa_id) url += `&empresa_id=${encodeURIComponent(empresa_id)}`;
-    await fetchAndRenderArquivos(url, div);
-    hideLoading();
-  }
-
-  // Função auxiliar para buscar e renderizar arquivos
-  async function fetchAndRenderArquivos(url, div) {
-    div.innerHTML = "Carregando...";
-    try {
-      const resp = await fetch(url);
-      const arquivos = await resp.json();
-      if (!Array.isArray(arquivos) || arquivos.length === 0) {
-        div.innerHTML = "<em>Nenhum arquivo cadastrado para este filtro.</em>";
-        return;
-      }
-      let html = "";
-      arquivos.forEach(arq => {
-        html += `
-          <div class="lista-item" style="position:relative;">
-            <div class="lista-icon">
-              ${
-                arq.tipo && arq.tipo.startsWith('image')
-                  ? `<img src="${arq.url}" alt="Imagem ${arq.id}" style="max-width:54px;max-height:54px;border-radius:8px;border:1px solid #e0e3ec;background:#fff;">`
-                  : `<span class="pdf-icon" style="color:#5176f3;font-size:2.3em;">&#128462;</span>`
-              }
-            </div>
-            <div class="lista-info" style="flex:1;">
-              <span class="label" style="color:#888;">Nome:</span> <b>${arq.nome}</b><br>
-              <span class="label" style="color:#888;">Tipo:</span> ${arq.tipo || '-'}
-            </div>
-            <div class="botoes-arquivo">
-              <a href="${arq.url}" download target="_blank" class="download-btn">
-                <span style="font-size:1.15em;vertical-align:-2px;">&#128229;</span> Download
-              </a>
-              <button class="danger" onclick="deletarArquivo('${arq.id}', this)">Excluir</button>
-            </div>
-          </div>
-        `;
-      });
-      div.innerHTML = html;
-    } catch {
-      div.innerHTML = "<span class='error'>Falha ao buscar arquivos.</span>";
-    }
-  }
-
-  // PATCH para soft delete
-  async function deletarArquivo(arquivo_id, btn) {
-    if (!confirm("Tem certeza que deseja excluir este arquivo? Esta ação não poderá ser desfeita.")) return;
-    btn.disabled = true;
-    btn.textContent = "Excluindo...";
-    showLoading();
-    try {
-      const resp = await fetch(`/arquivo/${arquivo_id}`, {
-        method: "PATCH",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ativo: false, status: "inativo" })
-      });
-      const res = await resp.json();
-      if (resp.ok) {
-        btn.closest('.lista-item').remove();
-      } else {
-        alert("Erro ao excluir: " + (res.erro || JSON.stringify(res)));
-        btn.disabled = false;
-        btn.textContent = "Excluir";
-      }
-    } catch (e) {
-      alert("Erro ao excluir!");
-      btn.disabled = false;
-      btn.textContent = "Excluir";
-    }
-    hideLoading();
-  }
-
-  // Inicialização
-  preencherUsuarios();
-</script>
-</body>
+</div>
+  </body>
 </html>
